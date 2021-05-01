@@ -7,72 +7,75 @@ namespace SleepingBarber
     {
         static void Main(string[] args)
         {
-            int cantidadSillas = 3;
-            int maximoClientes = 10;
-            bool listo = false;
+            Semaphore barberReady = new Semaphore(0, 1);
+            Semaphore accessWaitingRoomSeats = new Semaphore(0, 1); // El numero de asientos puede ser incrementado o decrementado
+            Semaphore custReady = new Semaphore(0, 3); // numero de clientes en el cuarto de espera
 
-            Semaphore salaEspera = new Semaphore(cantidadSillas, cantidadSillas);
-            Semaphore sillaBarbero = new Semaphore(0, 1);
-            Semaphore barberoListo = new Semaphore(0, 1);
-            Semaphore entrarSala = new Semaphore(0, 1);
-            
-            void barbero()
+            int numberOfFreeWaitingRoomSeats = 10;
+            int maxClients = 10;
+
+            Console.WriteLine("Todo preparado");
+
+            void Barber()
             {
-                while (!listo)
+                Console.WriteLine("Entro hilo barbero.");
+                while (true)
                 {
-
-                    salaEspera.WaitOne();
-                    entrarSala.WaitOne();
-                    cantidadSillas += 1;
-                    barberoListo.Release();
-                    entrarSala.Release();
-
-                    Console.WriteLine("Corta cabello");
+                    Console.WriteLine("Dentro del ciclo");
+                    custReady.WaitOne();
+                    accessWaitingRoomSeats.WaitOne();
+                    numberOfFreeWaitingRoomSeats++;
+                    barberReady.Release();
+                    accessWaitingRoomSeats.Release();
+                    Console.WriteLine("Cute hair here...");
                 }
             }
 
-            void cliente(Object number)
+            void Customer(Object number)
             {
                 while (true)
                 {
-                    entrarSala.WaitOne();
+                    accessWaitingRoomSeats.WaitOne();
 
-                    if (cantidadSillas > 0)
+                    if (numberOfFreeWaitingRoomSeats > 0)
                     {
-                        cantidadSillas -= 1;
-                        salaEspera.Release();
-                        entrarSala.Release();
-                        barberoListo.WaitOne();
+                        numberOfFreeWaitingRoomSeats--;
+                        custReady.Release();
+                        accessWaitingRoomSeats.Release();
+                        barberReady.WaitOne();
 
-                        Console.WriteLine("have a hair cut here");
+                        Console.WriteLine("Have cut hair here");
                     }
                     else
                     {
-                        entrarSala.Release();
-                        Console.WriteLine("Se ve sin corte de pelo");
+                        accessWaitingRoomSeats.Release();
+
+                        Console.WriteLine("Irse sin corte de cabello");
                     }
                 }
             }
 
-            Thread HiloBarbero = new Thread(barbero);
-            HiloBarbero.Start();
+            Thread barberThread = new Thread(Barber);
+            Console.WriteLine("Hilo barbero creado.");
 
-            Thread[] Clientes = new Thread[maximoClientes];
+            barberThread.Start();
 
-            for(int i = 0; i < maximoClientes; i++)
+            Console.WriteLine("Hilo barbero iniciado.");
+
+            Thread[] Clients = new Thread[maxClients];
+
+            for (int i = 0; i < maxClients ; i++)
             {
-                Clientes[i] = new Thread(new ParameterizedThreadStart(cliente));
-                Clientes[i].Start();
+                Clients[i] = new Thread(new ParameterizedThreadStart(Customer));
+                Clients[i].Start(i);
             }
 
-            for (int i = 0; i < maximoClientes; i++)
+            for (int i = 0; i < maxClients; i++)
             {
-                Clientes[i].Join();
+                Clients[i].Join();
             }
-            listo = true;
-            barberoListo.Release();
 
-            HiloBarbero.Join();
+            barberThread.Join();
             Console.WriteLine("Terminado!");
         }
     }
