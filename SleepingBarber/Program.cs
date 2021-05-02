@@ -7,29 +7,29 @@ namespace SleepingBarber
     {
         static void Main(string[] args)
         {
-            Semaphore barberReady = new Semaphore(0, 1);
-            Semaphore accessWaitingRoomSeats = new Semaphore(0, 1); // El numero de asientos puede ser incrementado o decrementado
-            Semaphore custReady = new Semaphore(0, 3); // numero de clientes en el cuarto de espera
-
-            Random rand = new Random(); 
-            int numberOfFreeWaitingRoomSeats = 10;
+            bool terminado = false;
+            Random rand = new Random();
+            int numberOfFreeWaitingRoomSeats = 3;
             int maxClients = 10;
+
+            Semaphore barberReady = new Semaphore(0, 1); // Inicia en 0 por dormir
+            Semaphore accessWaitingRoomSeats = new Semaphore(0, 1); // la silla donde se corta el cabello
+            Semaphore custReady = new Semaphore(0, 3); // numero de clientes en el cuarto de espera
 
             Console.WriteLine("Todo preparado");
 
             void Barber()
             {
-                Console.WriteLine("Entro hilo barbero.");
-                while (true)
+                while (!terminado)
                 {
-                    Console.WriteLine("Dentro del ciclo");
-                    custReady.Release();
-                    Console.WriteLine("post cusrReady");
+                    custReady.WaitOne();
                     accessWaitingRoomSeats.WaitOne();
+
                     numberOfFreeWaitingRoomSeats++;
+
                     barberReady.Release();
                     accessWaitingRoomSeats.Release();
-                    Console.WriteLine("Cute hair here...");
+                    Console.WriteLine("Corte de cabello de un cliente...");
                 }
             }
 
@@ -39,18 +39,18 @@ namespace SleepingBarber
 
                 Thread.Sleep(rand.Next(1, 5) * 1000);
 
-                Console.WriteLine("Dentro hilo cliente {0}", num);
+                // Console.WriteLine("Dentro hilo cliente {0}", num);
 
-                accessWaitingRoomSeats.WaitOne();
+                // accessWaitingRoomSeats.WaitOne();
 
                 if (numberOfFreeWaitingRoomSeats > 0)
                 {
                     numberOfFreeWaitingRoomSeats--;
-                    custReady.WaitOne();
-                    accessWaitingRoomSeats.Release();
-                    barberReady.Release();
+                    custReady.Release();
+                    accessWaitingRoomSeats.WaitOne();
+                    barberReady.WaitOne();
 
-                    Console.WriteLine("Have cut hair here");
+                    Console.WriteLine("Se le corta el pelo al cliente{0}", num);
                 }
                 else
                 {
@@ -80,7 +80,7 @@ namespace SleepingBarber
             {
                 Clients[i].Join();
             }
-
+            terminado = true;
             barberThread.Join();
             Console.WriteLine("Terminado!");
         }
