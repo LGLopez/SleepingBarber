@@ -13,7 +13,7 @@ namespace SleepingBarber
             int maxClients = 10;
 
             Semaphore barberReady = new Semaphore(0, 1); // Inicia en 0 por dormir
-            Semaphore accessWaitingRoomSeats = new Semaphore(0, 1); // la silla donde se corta el cabello
+            Semaphore accessWaitingRoomSeats = new Semaphore(0, 1); // acceder al cuarto de espera
             Semaphore custReady = new Semaphore(0, 3); // numero de clientes en el cuarto de espera
 
             Console.WriteLine("Todo preparado");
@@ -36,29 +36,33 @@ namespace SleepingBarber
             void Customer(Object number)
             {
                 int num = (int)number;
-
-                Thread.Sleep(rand.Next(1, 5) * 1000);
-
-                // Console.WriteLine("Dentro hilo cliente {0}", num);
-
-                // accessWaitingRoomSeats.WaitOne();
-
-                if (numberOfFreeWaitingRoomSeats > 0)
+                bool clientDone = false;
+                while (!clientDone)
                 {
-                    numberOfFreeWaitingRoomSeats--;
-                    custReady.Release();
-                    accessWaitingRoomSeats.WaitOne();
-                    barberReady.WaitOne();
+                    Thread.Sleep(rand.Next(1, 9) * 1000);
 
-                    Console.WriteLine("Se le corta el pelo al cliente{0}", num);
-                }
-                else
-                {
-                    accessWaitingRoomSeats.Release();
+                    Console.WriteLine("llego hilo cliente {0}", num);
 
-                    Console.WriteLine("Irse sin corte de cabello");
-                }
+                    // accessWaitingRoomSeats.WaitOne();
                 
+                    if (numberOfFreeWaitingRoomSeats > 0)
+                    {
+                        numberOfFreeWaitingRoomSeats--;
+                        custReady.Release();
+                    
+                        accessWaitingRoomSeats.WaitOne();
+                        barberReady.WaitOne();
+
+                        Console.WriteLine("Se le corta el pelo al cliente {0}", num);
+                        clientDone = true;
+                    }
+                    else
+                    {
+                        accessWaitingRoomSeats.Release();
+                        Console.WriteLine("Irse sin corte de cabello");
+                    }
+                }
+
             }
 
             Thread barberThread = new Thread(Barber);
