@@ -23,13 +23,13 @@ namespace SleepingBarber
                 while (!terminado)
                 {
                     custReady.WaitOne();
-                    accessWaitingRoomSeats.WaitOne();
+                    // accessWaitingRoomSeats.WaitOne(); // quitando este jala :c pero no hace join
 
                     numberOfFreeWaitingRoomSeats++;
 
                     barberReady.Release();
                     accessWaitingRoomSeats.Release();
-                    Console.WriteLine("Corte de cabello de un cliente...");
+                    // Console.WriteLine("Corte de cabello de un cliente...");
                 }
             }
 
@@ -79,11 +79,12 @@ namespace SleepingBarber
                 Clients[i] = new Thread(new ParameterizedThreadStart(Customer));
                 Clients[i].Start(i);
             }
-
+            
             for (int i = 0; i < maxClients; i++)
             {
                 Clients[i].Join();
             }
+            
             terminado = true;
             barberThread.Join();
             Console.WriteLine("Terminado!");
