@@ -13,7 +13,7 @@ namespace SleepingBarber
             int maxClients = 10;
 
             Semaphore barberReady = new Semaphore(0, 1); // Inicia en 0 por dormir
-            Semaphore accessWaitingRoomSeats = new Semaphore(0, 1); // acceder al cuarto de espera
+            Semaphore accessWaitingRoomSeats = new Semaphore(1, 1); // acceder al cuarto de espera
             Semaphore custReady = new Semaphore(0, 3); // numero de clientes en el cuarto de espera
 
             Console.WriteLine("Todo preparado");
@@ -23,34 +23,34 @@ namespace SleepingBarber
                 while (!terminado)
                 {
                     custReady.WaitOne();
-                    // accessWaitingRoomSeats.WaitOne(); // quitando este jala :c pero no hace join
+                    accessWaitingRoomSeats.WaitOne(); // quitando este jala :c pero no hace join
 
                     numberOfFreeWaitingRoomSeats++;
 
                     barberReady.Release();
                     accessWaitingRoomSeats.Release();
-                    // Console.WriteLine("Corte de cabello de un cliente...");
+                    Console.WriteLine("Corte de cabello de un cliente...");
                 }
             }
 
             void Customer(Object number)
             {
+
                 int num = (int)number;
                 bool clientDone = false;
                 while (!clientDone)
                 {
-                    Thread.Sleep(rand.Next(1, 9) * 1000);
-
                     Console.WriteLine("llego hilo cliente {0}", num);
 
-                    // accessWaitingRoomSeats.WaitOne();
-                
+                    Thread.Sleep(rand.Next(1, 9) * 1000);
+                    accessWaitingRoomSeats.WaitOne();
+
                     if (numberOfFreeWaitingRoomSeats > 0)
                     {
                         numberOfFreeWaitingRoomSeats--;
                         custReady.Release();
-                    
-                        accessWaitingRoomSeats.WaitOne();
+                        accessWaitingRoomSeats.Release();
+
                         barberReady.WaitOne();
 
                         Console.WriteLine("Se le corta el pelo al cliente {0}", num);
