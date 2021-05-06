@@ -93,13 +93,12 @@ namespace SleepingBarber
             void stopCode()
             {
                 ConsoleKeyInfo cki;
-                cki = Console.ReadKey();
-                if (cki.Key == ConsoleKey.Escape)
+                do
                 {
+                    cki = Console.ReadKey();
+                } while (cki.Key != ConsoleKey.Escape);
                     terminado = true;
-                    Environment.Exit(0);
-                }
-                    
+                Environment.Exit(0);
             }
 
             Thread stopCodeThread = new Thread(stopCode);
